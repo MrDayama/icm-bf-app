@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICM & Bubble Factor Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#0d6efd">
+</head>
+<body>
+    <div class="container-fluid py-3 py-md-4">
+        <!-- Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1 class="text-center mb-2">🎰 ICM & Bubble Factor</h1>
+                <p class="text-center text-muted small">Independent Chip Model Calculator</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <!-- Input Panel -->
+            <div class="col-12 col-lg-5 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">📊 Input Parameters</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Player Count -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Number of Players</label>
+                            <div class="input-group">
+                                <button class="btn btn-outline-secondary" type="button" id="playerDecrease">−</button>
+                                <input type="number" class="form-control text-center" id="playerCount" value="3" min="2" max="9" readonly>
+                                <button class="btn btn-outline-secondary" type="button" id="playerIncrease">+</button>
+                            </div>
+                            <small class="text-muted">2-9 players</small>
+                        </div>
+
+                        <!-- Stacks Section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Stacks (chips)</label>
+                            <div id="stacksContainer"></div>
+                            <small class="text-muted d-block mt-2">Enter chip stacks for each player</small>
+                        </div>
+
+                        <!-- Payouts Section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Payouts ($ or chips)</label>
+                            <div id="payoutsContainer"></div>
+                            <small class="text-muted d-block mt-2">Enter payouts in descending order</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 mb-3">
+                            <button class="btn btn-primary btn-lg" id="calculateBtn" onclick="calculateICM()">
+                                Calculate
+                            </button>
+                        </div>
+
+                        <!-- Examples Dropdown -->
+                        <div class="mb-2">
+                            <label class="form-label fw-bold small">Quick Examples</label>
+                            <select class="form-select form-select-sm" id="examplesSelect" onchange="loadExample()">
+                                <option value="">Select an example...</option>
+                            </select>
+                        </div>
+
+                        <!-- Info Messages -->
+                        <div id="alertContainer"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="col-12 col-lg-7">
+                <!-- ICM Results -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">💰 ICM Values (Expected Payout)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="icmResults" class="table-responsive">
+                            <p class="text-muted text-center py-4">Enter values and click Calculate</p>
+                        </div>
+                        <small class="text-muted" id="icmTotal"></small>
+                    </div>
+                </div>
+
+                <!-- Bubble Factor Results -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">📈 Bubble Factor (Multiplier vs ICM)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="bfResults" class="table-responsive">
+                            <p class="text-muted text-center py-4">Enter values and click Calculate</p>
+                        </div>
+                        <small class="text-muted">BF > 0: +EV if you win | BF < 0: -EV if you win</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('{{ url_for('static', filename='service-worker.js') }}')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('SW registration failed', err));
+      });
+    }
+    </script>
+</body>
+</html>

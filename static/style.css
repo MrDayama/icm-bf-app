@@ -1,0 +1,318 @@
+/* Mobile-first responsive design */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-bg: #f8f9fa;
+    --card-padding-mobile: 1rem;
+    --card-padding-desktop: 1.5rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--light-bg);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+.container-fluid {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+/* Cards - Mobile optimized */
+.card {
+    border: none;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.card-body {
+    padding: var(--card-padding-mobile);
+}
+
+/* Typography */
+h1 {
+    font-size: 1.8rem !important;
+    font-weight: 700;
+    color: #212529;
+}
+
+h5 {
+    font-size: 1rem !important;
+    font-weight: 600;
+}
+
+.form-label {
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: #212529;
+}
+
+/* Input fields - Touch friendly */
+.form-control,
+.form-select,
+.input-group-text,
+.btn {
+    font-size: 1rem;
+    padding: 0.75rem;
+    min-height: 44px;
+    border-radius: 8px;
+}
+
+.input-group {
+    gap: 0;
+}
+
+.input-group .btn {
+    padding: 0.75rem 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Button styles */
+.btn {
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-lg {
+    padding: 1rem;
+    min-height: 50px;
+    font-size: 1.1rem;
+}
+
+/* Tables for results */
+table {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    padding: 0.75rem;
+    border: none;
+    color: #495057;
+}
+
+table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #dee2e6;
+}
+
+table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Alert boxes */
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0a3622;
+}
+
+/* Dynamic input containers */
+.input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+
+.input-row input {
+    flex: 1;
+    min-width: 0;
+}
+
+.input-row label {
+    min-width: 30px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 0;
+}
+
+/* Results styling */
+.result-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.result-badge.positive {
+    background-color: #d1e7dd;
+    color: #0a3622;
+}
+
+.result-badge.negative {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.result-badge.neutral {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+/* Small text */
+.small {
+    font-size: 0.85rem;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Loading state */
+.loading {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+    margin-right: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .container-fluid {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    h1 {
+        font-size: 1.5rem !important;
+    }
+
+    .card-body {
+        padding: 0.75rem;
+    }
+
+    .form-control,
+    .form-select,
+    .btn {
+        font-size: 0.95rem;
+        padding: 0.65rem;
+        min-height: 42px;
+    }
+
+    table {
+        font-size: 0.85rem;
+    }
+
+    table th,
+    table td {
+        padding: 0.5rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 991px) {
+    .card-body {
+        padding: var(--card-padding-desktop);
+    }
+}
+
+@media (min-width: 992px) {
+    .card-body {
+        padding: var(--card-padding-desktop);
+    }
+
+    .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* Landscape mode adjustments */
+@media (max-height: 600px) and (orientation: landscape) {
+    h1 {
+        font-size: 1.3rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .card {
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body {
+        padding: 0.5rem !important;
+    }
+}
+
+/* Accessibility */
+.form-control:focus,
+.form-select:focus,
+.btn:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: white;
+    }
+
+    .btn,
+    .form-control,
+    .form-select {
+        display: none;
+    }
+
+    .card {
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+}
