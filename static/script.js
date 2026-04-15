@@ -256,12 +256,15 @@ function displayICMResults(icm, stacks, payouts) {
 function displayBFResults(bfList) {
     const container = document.getElementById('bfResults');
 
-    let html = '';
+    // Actions (CSV) will be injected here
+    let html = '<div class="bf-actions"><button id="downloadCsvBtn" class="btn btn-sm btn-outline-primary csv-btn">Download CSV</button></div>';
 
     bfList.forEach((playerObj, idx) => {
         html += `<div class="mb-3">`;
-        html += `<h6 class="mb-1"><strong>${playerObj.player}</strong> <small class="text-muted">(avg: ${isFinite(playerObj.average_bf) ? playerObj.average_bf.toFixed(2) + 'x' : '∞x'})</small></h6>`;
-        html += '<table class="table table-sm mb-2"><thead><tr><th>Opponent</th><th>BF</th><th>Interpretation</th></tr></thead><tbody>';
+        html += `<div class="d-flex justify-content-between align-items-center"><h6 class="mb-1"><strong>${playerObj.player}</strong> <small class="text-muted">(avg: ${isFinite(playerObj.average_bf) ? playerObj.average_bf.toFixed(2) + 'x' : '∞x'})</small></h6><button class="btn btn-sm btn-link" data-bs-toggle="collapse" data-bs-target="#details-${idx}">Details</button></div>`;
+
+        html += `<div id="details-${idx}" class="collapse bf-detail">`;
+        html += '<table class="table table-sm mb-2"><thead><tr><th>Opponent</th><th>BF</th><th>Interpretation</th><th>Reason</th></tr></thead><tbody>';
 
         playerObj.vs_opponents.forEach(op => {
             const val = op.bf;
@@ -283,14 +286,44 @@ function displayBFResults(bfList) {
                 interpretation = 'Very cautious';
             }
 
-            html += `<tr><td>${op.opponent}</td><td><span class="result-badge ${interpretation === 'Standard' ? 'standard' : interpretation === 'Be cautious' ? 'caution' : 'danger'}">${display}</span></td><td>${interpretation}</td></tr>`;
+            const reason = op.reason ? op.reason : '';
+            const evInfo = `gain:${op.ev_gain}, loss:${op.ev_loss}`;
+
+            html += `<tr><td>${op.opponent}</td><td><span class="result-badge ${interpretation === 'Standard' ? 'standard' : interpretation === 'Be cautious' ? 'caution' : 'danger'}">${display}</span></td><td>${interpretation}</td><td><small class="text-muted">${reason} ${evInfo}</small></td></tr>`;
         });
 
         html += '</tbody></table>';
-        html += '</div>';
+        html += '</div>'; // collapse
+        html += '</div>'; // player block
     });
 
     container.innerHTML = html;
+
+    // CSV download
+    document.getElementById('downloadCsvBtn').addEventListener('click', function() {
+        downloadBFCSV(bfList);
+    });
+}
+
+function downloadBFCSV(bfList) {
+    const rows = [];
+    rows.push(['player','opponent','bf','ev_gain','ev_loss','reason']);
+    bfList.forEach(p => {
+        p.vs_opponents.forEach(op => {
+            rows.push([p.player, op.opponent, op.bf === Infinity ? 'inf' : op.bf, op.ev_gain, op.ev_loss, op.reason || '']);
+        });
+    });
+
+    const csvContent = rows.map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bubble_factor.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // Utility functions

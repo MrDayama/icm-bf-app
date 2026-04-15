@@ -125,7 +125,11 @@ class TestBubbleFactor(unittest.TestCase):
             for op in entry['vs_opponents']:
                 self.assertIn('opponent', op)
                 self.assertIn('bf', op)
+                self.assertIn('ev_gain', op)
+                self.assertIn('ev_loss', op)
                 self.assertTrue(isinstance(op['bf'], float) or op['bf'] == float('inf'))
+                self.assertTrue(isinstance(op['ev_gain'], float) or isinstance(op['ev_gain'], int))
+                self.assertTrue(isinstance(op['ev_loss'], float) or isinstance(op['ev_loss'], int))
                 # Non-negative
                 if op['bf'] != float('inf'):
                     self.assertGreaterEqual(op['bf'], 0.0)

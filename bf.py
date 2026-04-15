@@ -60,11 +60,14 @@ def calculate_bubble_factor(stacks: List[float], payouts: List[float]) -> List[D
             ev_loss = icm_baseline[i] - icm_lose
 
             eps = 1e-12
+            reason = ''
             if ev_gain <= eps:
                 if ev_loss > eps:
                     bf_val = float('inf')
+                    reason = 'EV_gain=0'
                 else:
                     bf_val = 1.0
+                    reason = 'neutral'
             else:
                 bf_val = ev_loss / ev_gain
 
@@ -72,7 +75,10 @@ def calculate_bubble_factor(stacks: List[float], payouts: List[float]) -> List[D
 
             vs_list.append({
                 'opponent': f'P{j+1}',
-                'bf': display_val
+                'bf': display_val,
+                'ev_gain': round(ev_gain, 4),
+                'ev_loss': round(ev_loss, 4),
+                'reason': reason
             })
 
             if display_val != float('inf'):

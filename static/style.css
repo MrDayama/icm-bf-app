@@ -219,6 +219,12 @@ table tbody tr:last-child td {
     color: #842029;
 }
 
+/* BF UI extras */
+.bf-actions { display:flex; justify-content:flex-end; margin-bottom:0.5rem; }
+.bf-detail small { font-size:0.85rem; color:#6c757d; }
+.csv-btn { padding: 0.25rem 0.5rem; font-size:0.85rem; }
+.collapse .table { margin-bottom:0; }
+
 /* Small text */
 .small {
     font-size: 0.85rem;
