@@ -255,24 +255,44 @@ function displayICMResults(icm, stacks, payouts) {
 
 function displayBFResults(bf, icm, payouts) {
     const container = document.getElementById('bfResults');
-    
+
     let html = '<table class="table table-sm">';
     html += '<thead><tr><th>Player</th><th>Bubble Factor</th><th>Interpretation</th></tr></thead><tbody>';
-    
+
     for (let i = 0; i < bf.length; i++) {
-        const sign = bf[i] > 0 ? '+' : '';
-        const badgeClass = bf[i] > 0 ? 'positive' : bf[i] < 0 ? 'negative' : 'neutral';
-        const interpretation = bf[i] > 0 ? '✓ Good spot' : bf[i] < 0 ? '✗ Tough spot' : '→ Fair';
-        
+        const value = bf[i];
+        const isInfinite = !isFinite(value);
+        const display = isInfinite ? '∞x' : `${parseFloat(value).toFixed(2)}x`;
+
+        // Interpretation labels
+        let badgeClass = 'standard';
+        let interpretation = 'Standard';
+        if (!isInfinite) {
+            const v = parseFloat(value);
+            if (v > 1.8) {
+                badgeClass = 'danger';
+                interpretation = 'Very cautious';
+            } else if (v > 1.3) {
+                badgeClass = 'caution';
+                interpretation = 'Be cautious';
+            } else {
+                badgeClass = 'standard';
+                interpretation = 'Standard';
+            }
+        } else {
+            badgeClass = 'danger';
+            interpretation = 'Extremely risky';
+        }
+
         html += `
             <tr>
                 <td><strong>P${i + 1}</strong></td>
-                <td><span class="result-badge ${badgeClass}">${sign}${(bf[i] * 100).toFixed(1)}%</span></td>
+                <td><span class="result-badge ${badgeClass}">${display}</span></td>
                 <td>${interpretation}</td>
             </tr>
         `;
     }
-    
+
     html += '</tbody></table>';
     container.innerHTML = html;
 }

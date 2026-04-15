@@ -203,6 +203,22 @@ table tbody tr:last-child td {
     color: #383d41;
 }
 
+/* New BF interpretation styles */
+.result-badge.standard {
+    background-color: #e2e7f2;
+    color: #0d4ea6;
+}
+
+.result-badge.caution {
+    background-color: #fff3cd;
+    color: #6b4f00;
+}
+
+.result-badge.danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
 /* Small text */
 .small {
     font-size: 0.85rem;
