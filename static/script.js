@@ -229,52 +229,88 @@ function displayResults(data, stacks, payouts) {
 function displayICMResults(icm, stacks, payouts) {
     const container = document.getElementById('icmResults');
     const total = icm.reduce((a, b) => a + b, 0);
-    
-    let html = '<table class="table table-sm">';
-    html += '<thead><tr><th>Player</th><th>Stack</th><th>% Equity</th><th>ICM Value</th></tr></thead><tbody>';
-    
     const totalChips = stacks.reduce((a, b) => a + b, 0);
-    
+
+    // Mobile-friendly card layout
+    let html = '<div class="icm-cards">';
     for (let i = 0; i < icm.length; i++) {
         const equity = ((stacks[i] / totalChips) * 100).toFixed(1);
         html += `
-            <tr>
-                <td><strong>P${i + 1}</strong></td>
-                <td>${formatNumber(stacks[i])}</td>
-                <td>${equity}%</td>
-                <td><strong class="text-success">$${formatNumber(icm[i])}</strong></td>
-            </tr>
+            <div class="player-card">
+                <div class="player-header">
+                    <div>
+                        <div><strong>P${i + 1}</strong></div>
+                        <div class="meta">Stack: ${formatNumber(stacks[i])} • Equity: ${equity}%</div>
+                    </div>
+                    <div>
+                        <div class="result-badge neutral">ICM</div>
+                        <div style="margin-top:6px;text-align:right"><strong class="text-success">$${formatNumber(icm[i])}</strong></div>
+                    </div>
+                </div>
+            </div>
         `;
     }
-    
-    html += '</tbody></table>';
-    html += `<strong>Total ICM:</strong> $${formatNumber(total)} (Pot: $${formatNumber(payouts.reduce((a, b) => a + b, 0))})`;
-    
+    html += '</div>';
+    html += `<div class="mt-2"><strong>Total ICM:</strong> $${formatNumber(total)} (Pot: $${formatNumber(payouts.reduce((a, b) => a + b, 0))})</div>`;
+
     container.innerHTML = html;
 }
 
 function displayBFResults(bf, icm, payouts) {
     const container = document.getElementById('bfResults');
-    
-    let html = '<table class="table table-sm">';
-    html += '<thead><tr><th>Player</th><th>Bubble Factor</th><th>Interpretation</th></tr></thead><tbody>';
-    
+
+    // bf is expected to be an array of player objects: { player, vs_opponents: [{opponent, bf, ev_gain, ev_loss, reason}], average_bf }
+    let html = '';
+
     for (let i = 0; i < bf.length; i++) {
-        const sign = bf[i] > 0 ? '+' : '';
-        const badgeClass = bf[i] > 0 ? 'positive' : bf[i] < 0 ? 'negative' : 'neutral';
-        const interpretation = bf[i] > 0 ? '✓ Good spot' : bf[i] < 0 ? '✗ Tough spot' : '→ Fair';
-        
-        html += `
-            <tr>
-                <td><strong>P${i + 1}</strong></td>
-                <td><span class="result-badge ${badgeClass}">${sign}${(bf[i] * 100).toFixed(1)}%</span></td>
-                <td>${interpretation}</td>
-            </tr>
-        `;
+        const playerObj = bf[i];
+        const playerName = playerObj.player || `P${i+1}`;
+        const avg = (playerObj.average_bf !== undefined) ? (isFinite(playerObj.average_bf) ? Number(playerObj.average_bf).toFixed(2) + 'x' : '∞x') : '';
+
+        html += `<div class="player-card" data-player="${playerName}">`;
+        html += `<div class="player-header"><div><strong>${playerName}</strong><div class="meta">Avg BF: <span class="bf-label">${avg}</span></div></div>`;
+        html += `<div><button class="bf-toggle" aria-expanded="false" onclick="toggleBF(this)">Vs opponents <span class="small">▾</span></button></div></div>`;
+        html += `<div class="bf-accordion"><div class="bf-content">`;
+
+        if (Array.isArray(playerObj.vs_opponents) && playerObj.vs_opponents.length > 0) {
+            playerObj.vs_opponents.forEach(op => {
+                let bfVal = op.bf;
+                let display = isFinite(bfVal) ? Number(bfVal).toFixed(2) + 'x' : '∞x';
+                const label = getInterpretationLabel(bfVal);
+                const colorClass = label === 'Standard' ? 'positive' : label === 'Be cautious' ? 'neutral' : 'negative';
+
+                html += `<div class="bf-row"><div><strong>${op.opponent}</strong><div class="meta">EV gain: ${formatNumber(op.ev_gain || 0)} • EV loss: ${formatNumber(op.ev_loss || 0)}</div></div>`;
+                html += `<div style="display:flex;align-items:center;gap:0.5rem"><div class="bf-badge ${colorClass}">${display}</div><div class="bf-label">${label}</div></div></div>`;
+            });
+        } else {
+            html += `<div class="small text-muted">No opponent data</div>`;
+        }
+
+        html += `</div></div></div>`;
     }
-    
-    html += '</tbody></table>';
+
     container.innerHTML = html;
+}
+
+// Toggle accordion content (simple, no dependency)
+function toggleBF(btn) {
+    const card = btn.closest('.player-card');
+    const content = card.querySelector('.bf-content');
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    if (expanded) {
+        content.style.display = 'none';
+    } else {
+        content.style.display = 'block';
+    }
+}
+
+function getInterpretationLabel(bfVal) {
+    if (!isFinite(bfVal)) return 'Very cautious';
+    const v = Number(bfVal);
+    if (v <= 1.3) return 'Standard';
+    if (v <= 1.8) return 'Be cautious';
+    return 'Very cautious';
 }
 
 // Utility functions
