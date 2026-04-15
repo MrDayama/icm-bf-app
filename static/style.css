@@ -203,28 +203,6 @@ table tbody tr:last-child td {
     color: #383d41;
 }
 
-/* New BF interpretation styles */
-.result-badge.standard {
-    background-color: #e2e7f2;
-    color: #0d4ea6;
-}
-
-.result-badge.caution {
-    background-color: #fff3cd;
-    color: #6b4f00;
-}
-
-.result-badge.danger {
-    background-color: #f8d7da;
-    color: #842029;
-}
-
-/* BF UI extras */
-.bf-actions { display:flex; justify-content:flex-end; margin-bottom:0.5rem; }
-.bf-detail small { font-size:0.85rem; color:#6c757d; }
-.csv-btn { padding: 0.25rem 0.5rem; font-size:0.85rem; }
-.collapse .table { margin-bottom:0; }
-
 /* Small text */
 .small {
     font-size: 0.85rem;
@@ -319,6 +297,72 @@ table tbody tr:last-child td {
 .btn:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
+}
+
+/* Mobile card & BF accordion styles */
+.player-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.player-card .player-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.player-card .player-header .meta {
+    font-size: 0.95rem;
+    color: #495057;
+}
+.bf-accordion {
+    margin-top: 0.5rem;
+}
+.bf-toggle {
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0.5rem 0;
+    font-size: 1rem;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+.bf-content {
+    display: none;
+    padding-top: 0.5rem;
+}
+.bf-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0;
+    border-top: 1px dashed #eee;
+}
+.bf-row:first-child { border-top: none; }
+.bf-badge {
+    padding: 0.35rem 0.6rem;
+    border-radius: 12px;
+    font-weight:700;
+    min-width: 60px;
+    text-align: center;
+}
+.bf-label {
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+}
+
+/* Keep existing result-badge colors but ensure visibility on small screens */
+.result-badge { font-size: 0.9rem; padding: 0.4rem 0.75rem; }
+
+/* Responsive touch targets */
+@media (max-width: 576px) {
+    .player-card { padding: 1rem; }
+    .bf-toggle { padding: 0.75rem 0; }
+    .bf-badge { min-width: 72px; padding: 0.5rem 0.75rem; }
 }
 
 /* Print styles */

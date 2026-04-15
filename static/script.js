@@ -229,101 +229,88 @@ function displayResults(data, stacks, payouts) {
 function displayICMResults(icm, stacks, payouts) {
     const container = document.getElementById('icmResults');
     const total = icm.reduce((a, b) => a + b, 0);
-    
-    let html = '<table class="table table-sm">';
-    html += '<thead><tr><th>Player</th><th>Stack</th><th>% Equity</th><th>ICM Value</th></tr></thead><tbody>';
-    
     const totalChips = stacks.reduce((a, b) => a + b, 0);
-    
+
+    // Mobile-friendly card layout
+    let html = '<div class="icm-cards">';
     for (let i = 0; i < icm.length; i++) {
         const equity = ((stacks[i] / totalChips) * 100).toFixed(1);
         html += `
-            <tr>
-                <td><strong>P${i + 1}</strong></td>
-                <td>${formatNumber(stacks[i])}</td>
-                <td>${equity}%</td>
-                <td><strong class="text-success">$${formatNumber(icm[i])}</strong></td>
-            </tr>
+            <div class="player-card">
+                <div class="player-header">
+                    <div>
+                        <div><strong>P${i + 1}</strong></div>
+                        <div class="meta">Stack: ${formatNumber(stacks[i])} • Equity: ${equity}%</div>
+                    </div>
+                    <div>
+                        <div class="result-badge neutral">ICM</div>
+                        <div style="margin-top:6px;text-align:right"><strong class="text-success">$${formatNumber(icm[i])}</strong></div>
+                    </div>
+                </div>
+            </div>
         `;
     }
-    
-    html += '</tbody></table>';
-    html += `<strong>Total ICM:</strong> $${formatNumber(total)} (Pot: $${formatNumber(payouts.reduce((a, b) => a + b, 0))})`;
-    
+    html += '</div>';
+    html += `<div class="mt-2"><strong>Total ICM:</strong> $${formatNumber(total)} (Pot: $${formatNumber(payouts.reduce((a, b) => a + b, 0))})</div>`;
+
     container.innerHTML = html;
 }
 
-function displayBFResults(bfList) {
+function displayBFResults(bf, icm, payouts) {
     const container = document.getElementById('bfResults');
 
-    // Actions (CSV) will be injected here
-    let html = '<div class="bf-actions"><button id="downloadCsvBtn" class="btn btn-sm btn-outline-primary csv-btn">Download CSV</button></div>';
+    // bf is expected to be an array of player objects: { player, vs_opponents: [{opponent, bf, ev_gain, ev_loss, reason}], average_bf }
+    let html = '';
 
-    bfList.forEach((playerObj, idx) => {
-        html += `<div class="mb-3">`;
-        html += `<div class="d-flex justify-content-between align-items-center"><h6 class="mb-1"><strong>${playerObj.player}</strong> <small class="text-muted">(avg: ${isFinite(playerObj.average_bf) ? playerObj.average_bf.toFixed(2) + 'x' : '∞x'})</small></h6><button class="btn btn-sm btn-link" data-bs-toggle="collapse" data-bs-target="#details-${idx}">Details</button></div>`;
+    for (let i = 0; i < bf.length; i++) {
+        const playerObj = bf[i];
+        const playerName = playerObj.player || `P${i+1}`;
+        const avg = (playerObj.average_bf !== undefined) ? (isFinite(playerObj.average_bf) ? Number(playerObj.average_bf).toFixed(2) + 'x' : '∞x') : '';
 
-        html += `<div id="details-${idx}" class="collapse bf-detail">`;
-        html += '<table class="table table-sm mb-2"><thead><tr><th>Opponent</th><th>BF</th><th>Interpretation</th><th>Reason</th></tr></thead><tbody>';
+        html += `<div class="player-card" data-player="${playerName}">`;
+        html += `<div class="player-header"><div><strong>${playerName}</strong><div class="meta">Avg BF: <span class="bf-label">${avg}</span></div></div>`;
+        html += `<div><button class="bf-toggle" aria-expanded="false" onclick="toggleBF(this)">Vs opponents <span class="small">▾</span></button></div></div>`;
+        html += `<div class="bf-accordion"><div class="bf-content">`;
 
-        playerObj.vs_opponents.forEach(op => {
-            const val = op.bf;
-            const isInfinite = val === Infinity || val === 'Infinity' || !isFinite(val);
-            const display = isInfinite ? '∞x' : `${parseFloat(val).toFixed(2)}x`;
+        if (Array.isArray(playerObj.vs_opponents) && playerObj.vs_opponents.length > 0) {
+            playerObj.vs_opponents.forEach(op => {
+                let bfVal = op.bf;
+                let display = isFinite(bfVal) ? Number(bfVal).toFixed(2) + 'x' : '∞x';
+                const label = getInterpretationLabel(bfVal);
+                const colorClass = label === 'Standard' ? 'positive' : label === 'Be cautious' ? 'neutral' : 'negative';
 
-            // Interpretation
-            let interpretation = 'Standard';
-            if (!isInfinite) {
-                const v = parseFloat(val);
-                if (v > 1.8) {
-                    interpretation = 'Very cautious';
-                } else if (v > 1.3) {
-                    interpretation = 'Be cautious';
-                } else {
-                    interpretation = 'Standard';
-                }
-            } else {
-                interpretation = 'Very cautious';
-            }
+                html += `<div class="bf-row"><div><strong>${op.opponent}</strong><div class="meta">EV gain: ${formatNumber(op.ev_gain || 0)} • EV loss: ${formatNumber(op.ev_loss || 0)}</div></div>`;
+                html += `<div style="display:flex;align-items:center;gap:0.5rem"><div class="bf-badge ${colorClass}">${display}</div><div class="bf-label">${label}</div></div></div>`;
+            });
+        } else {
+            html += `<div class="small text-muted">No opponent data</div>`;
+        }
 
-            const reason = op.reason ? op.reason : '';
-            const evInfo = `gain:${op.ev_gain}, loss:${op.ev_loss}`;
-
-            html += `<tr><td>${op.opponent}</td><td><span class="result-badge ${interpretation === 'Standard' ? 'standard' : interpretation === 'Be cautious' ? 'caution' : 'danger'}">${display}</span></td><td>${interpretation}</td><td><small class="text-muted">${reason} ${evInfo}</small></td></tr>`;
-        });
-
-        html += '</tbody></table>';
-        html += '</div>'; // collapse
-        html += '</div>'; // player block
-    });
+        html += `</div></div></div>`;
+    }
 
     container.innerHTML = html;
-
-    // CSV download
-    document.getElementById('downloadCsvBtn').addEventListener('click', function() {
-        downloadBFCSV(bfList);
-    });
 }
 
-function downloadBFCSV(bfList) {
-    const rows = [];
-    rows.push(['player','opponent','bf','ev_gain','ev_loss','reason']);
-    bfList.forEach(p => {
-        p.vs_opponents.forEach(op => {
-            rows.push([p.player, op.opponent, op.bf === Infinity ? 'inf' : op.bf, op.ev_gain, op.ev_loss, op.reason || '']);
-        });
-    });
+// Toggle accordion content (simple, no dependency)
+function toggleBF(btn) {
+    const card = btn.closest('.player-card');
+    const content = card.querySelector('.bf-content');
+    const expanded = btn.getAttribute('aria-expanded') === 'true';
+    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+    if (expanded) {
+        content.style.display = 'none';
+    } else {
+        content.style.display = 'block';
+    }
+}
 
-    const csvContent = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'bubble_factor.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+function getInterpretationLabel(bfVal) {
+    if (!isFinite(bfVal)) return 'Very cautious';
+    const v = Number(bfVal);
+    if (v <= 1.3) return 'Standard';
+    if (v <= 1.8) return 'Be cautious';
+    return 'Very cautious';
 }
 
 // Utility functions
