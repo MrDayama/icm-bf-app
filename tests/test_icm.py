@@ -105,45 +105,58 @@ class TestICM(unittest.TestCase):
         self.assertGreater(icm[1], icm[2])
 
 class TestBubbleFactor(unittest.TestCase):
-    """Test Bubble Factor calculations"""
-    
-    def test_bubble_factor_sign(self):
-        """Test that BF increases with first prize"""
+    """Test Bubble Factor calculations (per-opponent BF_j)"""
+
+    def test_bubble_factor_structure_and_nonnegative(self):
         stacks = [100, 50]
         payouts = [100, 25]
-        
-        bf = calculate_bubble_factor(stacks, payouts)
-        
-        # BF = (First Prize - ICM_EV) / ICM_EV
-        # With small 2nd prize, both have positive BF
-        # But since BF depends on first prize, both same
-        self.assertTrue(all(b > 0 for b in bf))
-    
+
+        bf_list = calculate_bubble_factor(stacks, payouts)
+
+        # Structure check
+        self.assertIsInstance(bf_list, list)
+        self.assertEqual(len(bf_list), 2)
+
+        for entry in bf_list:
+            self.assertIn('player', entry)
+            self.assertIn('vs_opponents', entry)
+            self.assertIn('average_bf', entry)
+            # Each vs_opponent should have bf numeric or inf
+            for op in entry['vs_opponents']:
+                self.assertIn('opponent', op)
+                self.assertIn('bf', op)
+                self.assertTrue(isinstance(op['bf'], float) or op['bf'] == float('inf'))
+                # Non-negative
+                if op['bf'] != float('inf'):
+                    self.assertGreaterEqual(op['bf'], 0.0)
+
     def test_equal_stacks_equal_bf(self):
-        """Test that equal stacks have equal BF"""
         stacks = [100, 100]
         payouts = [100, 50]
-        
-        bf = calculate_bubble_factor(stacks, payouts)
-        
-        # Equal stacks should have equal BF
-        self.assertAlmostEqual(bf[0], bf[1], places=5)
-    
+
+        bf_list = calculate_bubble_factor(stacks, payouts)
+
+        # Each player has single opponent; values should be symmetric
+        bf_p1 = bf_list[0]['vs_opponents'][0]['bf']
+        bf_p2 = bf_list[1]['vs_opponents'][0]['bf']
+        self.assertAlmostEqual(bf_p1, bf_p2, places=2)
+
     def test_bubble_factor_consistency(self):
-        """Test BF consistency"""
         stacks = [50, 30, 20]
         payouts = [50, 30, 20]
-        
-        bf = calculate_bubble_factor(stacks, payouts)
-        
-        # All should be finite
-        self.assertTrue(all(isinstance(b, float) for b in bf))
-        # All should be positive (1st prize > ICM for all)
-        self.assertTrue(all(b > 0 for b in bf))
+
+        bf_list = calculate_bubble_factor(stacks, payouts)
+
+        # All entries present and average_bf numeric
+        for entry in bf_list:
+            self.assertIsInstance(entry['average_bf'], float)
+            self.assertEqual(len(entry['vs_opponents']), 2)
+            for op in entry['vs_opponents']:
+                self.assertTrue(isinstance(op['bf'], float) or op['bf'] == float('inf'))
 
 class TestValidation(unittest.TestCase):
     """Test input validation"""
-    
+
     def test_valid_input(self):
         """Test valid input passes validation"""
         calc = CalculationInput(
@@ -153,7 +166,7 @@ class TestValidation(unittest.TestCase):
         )
         is_valid, _ = calc.validate()
         self.assertTrue(is_valid)
-    
+
     def test_invalid_player_count(self):
         """Test invalid player count"""
         calc = CalculationInput(
@@ -163,7 +176,7 @@ class TestValidation(unittest.TestCase):
         )
         is_valid, _ = calc.validate()
         self.assertFalse(is_valid)
-    
+
     def test_mismatched_stacks_count(self):
         """Test mismatched stacks count"""
         calc = CalculationInput(
@@ -173,7 +186,7 @@ class TestValidation(unittest.TestCase):
         )
         is_valid, _ = calc.validate()
         self.assertFalse(is_valid)
-    
+
     def test_negative_stacks(self):
         """Test negative stacks"""
         calc = CalculationInput(
@@ -183,7 +196,7 @@ class TestValidation(unittest.TestCase):
         )
         is_valid, _ = calc.validate()
         self.assertFalse(is_valid)
-    
+
     def test_unsorted_payouts(self):
         """Test unsorted payouts"""
         calc = CalculationInput(
@@ -193,6 +206,44 @@ class TestValidation(unittest.TestCase):
         )
         is_valid, _ = calc.validate()
         self.assertFalse(is_valid)
+
+
+class TestBFScenarios(unittest.TestCase):
+    """Additional BF scenario tests requested"""
+
+    def test_case1_survival_on_loss(self):
+        # Case 1: [100, 50] -> large side survives when losing
+        stacks = [100, 50]
+        payouts = [100, 25]
+        icm_baseline = calculate_icm(stacks, payouts)
+
+        effective = min(stacks[0], stacks[1])
+        stacks_lose = stacks.copy()
+        stacks_lose[0] = stacks_lose[0] - effective
+        if stacks_lose[0] < 0:
+            stacks_lose[0] = 0.0
+
+        icm_lose = calculate_icm(stacks_lose, payouts)[0]
+        # Ensure leader still has positive ICM after loss
+        self.assertGreater(icm_lose, 0.0)
+
+    def test_case2_equal_stacks(self):
+        stacks = [100, 100]
+        payouts = [100, 50]
+        bf_list = calculate_bubble_factor(stacks, payouts)
+
+        bf_p1 = bf_list[0]['vs_opponents'][0]['bf']
+        bf_p2 = bf_list[1]['vs_opponents'][0]['bf']
+        self.assertAlmostEqual(bf_p1, bf_p2, places=2)
+
+    def test_case3_leader_bf_reasonable(self):
+        stacks = [80, 15, 5]
+        payouts = [100, 10, 5]
+        bf_list = calculate_bubble_factor(stacks, payouts)
+
+        leader_vs = bf_list[0]['vs_opponents']
+        for op in leader_vs:
+            self.assertTrue(op['bf'] == float('inf') or (isinstance(op['bf'], float) and op['bf'] < 100))
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

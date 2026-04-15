@@ -34,7 +34,7 @@ def calculate():
         icm_values = calculate_icm(stacks, payouts)
         bf_values = calculate_bubble_factor(stacks, payouts)
         
-        # Return results
+        # Return results (bf_values is a list of per-player BF objects)
         return jsonify({
             'success': True,
             'icm': icm_values,

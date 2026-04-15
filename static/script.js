@@ -253,47 +253,43 @@ function displayICMResults(icm, stacks, payouts) {
     container.innerHTML = html;
 }
 
-function displayBFResults(bf, icm, payouts) {
+function displayBFResults(bfList) {
     const container = document.getElementById('bfResults');
 
-    let html = '<table class="table table-sm">';
-    html += '<thead><tr><th>Player</th><th>Bubble Factor</th><th>Interpretation</th></tr></thead><tbody>';
+    let html = '';
 
-    for (let i = 0; i < bf.length; i++) {
-        const value = bf[i];
-        const isInfinite = !isFinite(value);
-        const display = isInfinite ? '∞x' : `${parseFloat(value).toFixed(2)}x`;
+    bfList.forEach((playerObj, idx) => {
+        html += `<div class="mb-3">`;
+        html += `<h6 class="mb-1"><strong>${playerObj.player}</strong> <small class="text-muted">(avg: ${isFinite(playerObj.average_bf) ? playerObj.average_bf.toFixed(2) + 'x' : '∞x'})</small></h6>`;
+        html += '<table class="table table-sm mb-2"><thead><tr><th>Opponent</th><th>BF</th><th>Interpretation</th></tr></thead><tbody>';
 
-        // Interpretation labels
-        let badgeClass = 'standard';
-        let interpretation = 'Standard';
-        if (!isInfinite) {
-            const v = parseFloat(value);
-            if (v > 1.8) {
-                badgeClass = 'danger';
-                interpretation = 'Very cautious';
-            } else if (v > 1.3) {
-                badgeClass = 'caution';
-                interpretation = 'Be cautious';
+        playerObj.vs_opponents.forEach(op => {
+            const val = op.bf;
+            const isInfinite = val === Infinity || val === 'Infinity' || !isFinite(val);
+            const display = isInfinite ? '∞x' : `${parseFloat(val).toFixed(2)}x`;
+
+            // Interpretation
+            let interpretation = 'Standard';
+            if (!isInfinite) {
+                const v = parseFloat(val);
+                if (v > 1.8) {
+                    interpretation = 'Very cautious';
+                } else if (v > 1.3) {
+                    interpretation = 'Be cautious';
+                } else {
+                    interpretation = 'Standard';
+                }
             } else {
-                badgeClass = 'standard';
-                interpretation = 'Standard';
+                interpretation = 'Very cautious';
             }
-        } else {
-            badgeClass = 'danger';
-            interpretation = 'Extremely risky';
-        }
 
-        html += `
-            <tr>
-                <td><strong>P${i + 1}</strong></td>
-                <td><span class="result-badge ${badgeClass}">${display}</span></td>
-                <td>${interpretation}</td>
-            </tr>
-        `;
-    }
+            html += `<tr><td>${op.opponent}</td><td><span class="result-badge ${interpretation === 'Standard' ? 'standard' : interpretation === 'Be cautious' ? 'caution' : 'danger'}">${display}</span></td><td>${interpretation}</td></tr>`;
+        });
 
-    html += '</tbody></table>';
+        html += '</tbody></table>';
+        html += '</div>';
+    });
+
     container.innerHTML = html;
 }
 

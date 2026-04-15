@@ -1,79 +1,93 @@
-"""Bubble Factor calculation module"""
-from typing import List
-from icm import calculate_icm, round_chips
+"""Bubble Factor calculation module (per-opponent BF_j)"""
+from typing import List, Dict, Any
+from icm import calculate_icm
 
-def calculate_bubble_factor(stacks: List[float], payouts: List[float]) -> List[float]:
+
+def calculate_bubble_factor(stacks: List[float], payouts: List[float]) -> List[Dict[str, Any]]:
     """
-    Calculate Bubble Factor for each player.
+    Calculate Bubble Factor per player against each opponent using stack-transfer model.
 
-    New definition:
-    BF = (ICM_loss_if_lose) / (ICM_gain_if_win)
+    Rules:
+    - effective_stack = min(stack_i, stack_j)
+    - Win: i gains effective_stack, j loses effective_stack
+    - Lose: i loses effective_stack, j gains effective_stack
+      (if stack_i <= stack_j, i may become 0)
 
-    Implementation (pairwise average): for each player i, simulate
-    - Win vs each opponent j: transfer opponent j's stack to player i (j eliminated) and recompute ICM
-    - Lose vs each opponent j: set player i's stack to 0 (i eliminated) and recompute ICM
-    Then per-opponent BF_j = (ICM_i - ICM_i_if_lose) / (ICM_i_if_win - ICM_i)
-    and BF for player i is the average of BF_j across all opponents.
-
-    Args:
-        stacks: List of chip stacks for each player
-        payouts: List of payouts in descending order
-
-    Returns:
-        List of Bubble Factor multipliers (floats). Values are rounded to 2 decimals for display.
-        If division by zero occurs (no gain), returns float('inf') for that opponent and propagated.
+    Returns a list where each element corresponds to a player and contains:
+    {
+        'player': 'P1',
+        'vs_opponents': [ {'opponent': 'P2', 'bf': 1.23}, ... ],
+        'average_bf': 1.23  # optional reference (average of finite BF_j)
+    }
     """
     n_players = len(stacks)
-    icm_values = calculate_icm(stacks, payouts)
+    icm_baseline = calculate_icm(stacks, payouts)
 
-    bubble_factors: List[float] = []
+    results: List[Dict[str, Any]] = []
 
     for i in range(n_players):
-        per_opponent_bfs: List[float] = []
+        player_label = f'P{i+1}'
+        vs_list: List[Dict[str, Any]] = []
+        bfs: List[float] = []
 
         for j in range(n_players):
             if i == j:
                 continue
 
-            # Win scenario: i gains j's stack, j eliminated
-            stacks_win = stacks.copy()
-            stacks_win[i] = stacks_win[i] + stacks_win[j]
-            stacks_win[j] = 0.0
+            # effective stack transfer
+            effective = min(stacks[i], stacks[j])
 
-            # Lose scenario: i eliminated
+            # Win scenario: i gains, j loses
+            stacks_win = stacks.copy()
+            stacks_win[i] = stacks_win[i] + effective
+            stacks_win[j] = stacks_win[j] - effective
+
+            # Lose scenario: i loses, j gains
             stacks_lose = stacks.copy()
-            stacks_lose[i] = 0.0
+            stacks_lose[i] = stacks_lose[i] - effective
+            stacks_lose[j] = stacks_lose[j] + effective
+
+            # Normalize negatives to zero
+            if stacks_win[j] < 0:
+                stacks_win[j] = 0.0
+            if stacks_lose[i] < 0:
+                stacks_lose[i] = 0.0
 
             icm_win = calculate_icm(stacks_win, payouts)[i]
             icm_lose = calculate_icm(stacks_lose, payouts)[i]
 
-            ev_gain = icm_win - icm_values[i]
-            ev_loss = icm_values[i] - icm_lose
+            ev_gain = icm_win - icm_baseline[i]
+            ev_loss = icm_baseline[i] - icm_lose
 
-            # Safety epsilon to avoid floating noise
             eps = 1e-12
             if ev_gain <= eps:
-                # If there is no gain but there is loss, define as infinite sensitivity
                 if ev_loss > eps:
-                    per_opponent_bfs.append(float('inf'))
+                    bf_val = float('inf')
                 else:
-                    # Both gain and loss are ~0, treat as neutral (1.0)
-                    per_opponent_bfs.append(1.0)
+                    bf_val = 1.0
             else:
-                per_opponent_bfs.append(ev_loss / ev_gain)
+                bf_val = ev_loss / ev_gain
 
-        # Aggregate: if any opponent produced infinity, set BF to infinity
-        if any((b == float('inf')) for b in per_opponent_bfs):
-            bf_value = float('inf')
-        elif len(per_opponent_bfs) == 0:
-            bf_value = 1.0
+            display_val = float('inf') if bf_val == float('inf') else round(bf_val, 2)
+
+            vs_list.append({
+                'opponent': f'P{j+1}',
+                'bf': display_val
+            })
+
+            if display_val != float('inf'):
+                bfs.append(display_val)
+
+        # Compute average over finite bfs if any
+        if len(bfs) == 0:
+            average = float('inf') if any(v['bf'] == float('inf') for v in vs_list) else 1.0
         else:
-            bf_value = sum(per_opponent_bfs) / len(per_opponent_bfs)
+            average = round(sum(bfs) / len(bfs), 2)
 
-        # Round to 2 decimals for display consistency
-        if bf_value != float('inf'):
-            bf_value = round(bf_value, 2)
+        results.append({
+            'player': player_label,
+            'vs_opponents': vs_list,
+            'average_bf': average
+        })
 
-        bubble_factors.append(bf_value)
-
-    return bubble_factors
+    return results
